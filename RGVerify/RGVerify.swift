@@ -9,9 +9,7 @@ struct RGVerify: ParsableCommand {
     mutating func run() throws {
         let expandedInput = (inputFile as NSString).expandingTildeInPath
         print("Verifying '\(inputFile)'...")
-        guard let garden = RGParser.parse(filePath: expandedInput) else {
-            throw RuntimeError("Couldn't parse '\(expandedInput)'")
-        }
+        let garden = try RGParser.parse(filePath: expandedInput)
         print("Parsed '\(inputFile)'...")
         var puzzle = [[String]]()
         for r in garden.rows {
@@ -31,13 +29,19 @@ struct RGVerify: ParsableCommand {
             let _ = try verifyBloom(answer: garden.light[i].answer, bloom: bloom)
             print("Verified \(bloom.joined()) in \(garden.light[i].answer)")
         }
-
         print("Verifying medium blooms...")
         let mediums = [[0,0], [0,3], [3,0], [3,6], [3, 12], [6,3], [6,9]]
         for (i, m) in mediums.enumerated() {
             let bloom = bloom(for: m, in: puzzle)
             let _ = try verifyBloom(answer: garden.medium[i].answer, bloom: bloom)
             print("Verified \(bloom.joined()) in \(garden.medium[i].answer)")
+        }
+        print("Verifying dark blooms...")
+        let darks = [[2,3], [2,9], [5,0], [5,6], [5, 12]]
+        for (i, d) in darks.enumerated() {
+            let bloom = bloom(for: d, in: puzzle)
+            let _ = try verifyBloom(answer: garden.dark[i].answer, bloom: bloom)
+            print("Verified \(bloom.joined()) in \(garden.dark[i].answer)")
         }
     }
 
@@ -93,6 +97,7 @@ struct RGVerify: ParsableCommand {
     }
 
     func verifyBloom(answer: String, bloom: [String]) throws -> Bool {
+        print("Verifying \(bloom.joined())")
         let bloomAnswer = answer.asArray
         guard bloom.count == 6 else {
             throw RuntimeError("Failed parsing: row answer segment is not 6 letters.")
@@ -117,12 +122,14 @@ struct RGVerify: ParsableCommand {
                 next = next < 5 ? next + 1 : 0
             }
             if matchCount == 6 {
+                print("Bloom is clockwise")
                 let newBloom = reorder(bloom, from: index, clockwise: true)
                 //print(newBloom)
                 if newBloom == bloomAnswer {
                     return true
                 }
             } else {
+                print("Bloom is counter-clockwise")
                 let newBloom = reorder(bloom, from: index, clockwise: false)
                 //print(newBloom)
                 if newBloom == bloomAnswer {
