@@ -102,7 +102,7 @@ struct RGVerify: ParsableCommand {
         guard bloom.count == 6 else {
             throw RuntimeError("Failed parsing: row answer segment is not 6 letters.")
         }
-        guard bloomAnswer.count <= 6 else {
+        guard bloomAnswer.count >= 6 else {
             throw RuntimeError("Failed parsing: bloom answer is not 6 or more letters.")
         }
         let indexes = bloom.indexes { $0 == bloomAnswer[0] }
